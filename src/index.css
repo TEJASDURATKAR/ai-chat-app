@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@plugin "daisyui";
+
+@theme {
+  --default-theme: light;
+  --prefersdark-theme: dark;
+  
+}
+.chat-item:hover .menu-btn{
+opacity:1;
+}
