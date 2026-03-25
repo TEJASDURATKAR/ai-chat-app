@@ -10,11 +10,11 @@ function Sidebar({
 
   const [openMenu, setOpenMenu] = useState(null);
   const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false); // 🔥 mobile toggle
   const menuRef = useRef(null);
 
   // Close menu when clicking outside
   useEffect(() => {
-
     const handleClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setOpenMenu(null);
@@ -22,18 +22,14 @@ function Sidebar({
     };
 
     document.addEventListener("mousedown", handleClick);
-
     return () => {
       document.removeEventListener("mousedown", handleClick);
     };
-
   }, []);
 
   // Rename Chat
   const renameChat = (id) => {
-
     const name = prompt("Rename chat");
-
     if (!name) return;
 
     const updated = chats.map(chat =>
@@ -45,9 +41,7 @@ function Sidebar({
 
   // Delete Chat
   const deleteChat = (id) => {
-
     const updated = chats.filter(chat => chat.id !== id);
-
     setChats(updated);
 
     if (activeChat === id && updated.length > 0) {
@@ -61,93 +55,131 @@ function Sidebar({
   );
 
   return (
-
-    <div className="w-64 h-screen bg-base-200 flex flex-col p-3">
-
-      {/* NEW CHAT */}
+    <>
+      {/* 🔥 Mobile Toggle Button */}
       <button
-        onClick={createNewChat}
-        className="btn btn-primary mb-3"
+        onClick={() => setIsOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-50 bg-base-200 p-2 rounded"
       >
-        + New Chat
+        ☰
       </button>
 
-      {/* SEARCH */}
-      <input
-        type="text"
-        placeholder="Search chats"
-        value={search}
-        onChange={(e)=>setSearch(e.target.value)}
-        className="input input-bordered w-full mb-3"
-      />
+      {/* 🔥 Overlay (Mobile) */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
-      {/* CHAT LIST */}
-      <div className="flex-1 overflow-y-auto space-y-1">
+      {/* 🔥 Sidebar */}
+      <div
+        className={`
+          fixed md:static z-50 top-0 left-0 h-screen
+          w-64 md:w-64 bg-base-200 flex flex-col p-3
+          transform transition-transform duration-300
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+      >
 
-        {filteredChats.map(chat => (
+        {/* 🔥 Close Button (Mobile) */}
+        <button
+          onClick={() => setIsOpen(false)}
+          className="md:hidden mb-2 text-right"
+        >
+          ❌
+        </button>
 
-          <div
-            key={chat.id}
-            onClick={() => setActiveChat(chat.id)}
-            className={`relative flex justify-between items-center p-2 rounded cursor-pointer
-            ${activeChat === chat.id ? "bg-base-300" : "hover:bg-base-300"}`}
-          >
+        {/* NEW CHAT */}
+        <button
+          onClick={createNewChat}
+          className="btn btn-primary mb-3 text-sm md:text-base"
+        >
+          + New Chat
+        </button>
 
-            <span className="truncate">
-              {chat.title}
-            </span>
+        {/* SEARCH */}
+        <input
+          type="text"
+          placeholder="Search chats"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input input-bordered w-full mb-3 text-sm"
+        />
 
-            {/* MENU BUTTON */}
-            <button
-              onClick={(e)=>{
-                e.stopPropagation();
-                setOpenMenu(openMenu === chat.id ? null : chat.id);
+        {/* CHAT LIST */}
+        <div className="flex-1 overflow-y-auto space-y-1">
+
+          {filteredChats.map(chat => (
+
+            <div
+              key={chat.id}
+              onClick={() => {
+                setActiveChat(chat.id);
+                setIsOpen(false); // 🔥 close on mobile click
               }}
+              className={`relative flex justify-between items-center p-2 rounded cursor-pointer
+              ${activeChat === chat.id ? "bg-base-300" : "hover:bg-base-300"}`}
             >
-              ⋮
-            </button>
 
-            {/* DRAWER */}
-            {openMenu === chat.id && (
+              <span className="truncate text-sm md:text-base">
+                {chat.title}
+              </span>
 
-              <div
-                ref={menuRef}
-                className="absolute right-0 top-8 bg-base-100 shadow-lg rounded w-40 z-50"
+              {/* MENU BUTTON */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu(openMenu === chat.id ? null : chat.id);
+                }}
+                className="text-lg"
               >
+                ⋮
+              </button>
 
-                <button
-                  onClick={(e)=>{
-                    e.stopPropagation();
-                    renameChat(chat.id);
-                    setOpenMenu(null);
-                  }}
-                  className="block w-full text-left px-3 py-2 hover:bg-base-200"
+              {/* DRAWER */}
+              {openMenu === chat.id && (
+
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 top-8 bg-base-100 shadow-lg rounded w-36 md:w-40 z-50"
                 >
-                  Rename
-                </button>
 
-                <button
-                  onClick={(e)=>{
-                    e.stopPropagation();
-                    deleteChat(chat.id);
-                    setOpenMenu(null);
-                  }}
-                  className="block w-full text-left px-3 py-2 text-red-500 hover:bg-base-200"
-                >
-                  Delete
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      renameChat(chat.id);
+                      setOpenMenu(null);
+                    }}
+                    className="block w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
+                  >
+                    Rename
+                  </button>
 
-              </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteChat(chat.id);
+                      setOpenMenu(null);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-red-500 hover:bg-base-200 text-sm"
+                  >
+                    Delete
+                  </button>
 
-            )}
+                </div>
 
-          </div>
+              )}
 
-        ))}
+            </div>
+
+          ))}
+
+        </div>
 
       </div>
-
-    </div>
+    </>
   );
 }
 

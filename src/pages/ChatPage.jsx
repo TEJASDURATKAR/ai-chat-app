@@ -105,7 +105,7 @@ function ChatPage() {
 
     <Navbar />
 
-    <div className="flex flex-1 overflow-hidden">
+   <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
 
       <Sidebar
         chats={chats}

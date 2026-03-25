@@ -5,8 +5,15 @@
 @theme {
   --default-theme: light;
   --prefersdark-theme: dark;
-  
 }
-.chat-item:hover .menu-btn{
-opacity:1;
+
+/* 👇 Show menu button on hover (desktop) + always visible on mobile */
+.chat-item:hover .menu-btn {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .menu-btn {
+    opacity: 1; /* always visible on mobile */
+  }
 }
