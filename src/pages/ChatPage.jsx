@@ -62,7 +62,7 @@ function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/ai/chat", {
+      const res = await axios.post("https://ai-chat-api-n772.onrender.com/api/ai/chat", {
         prompt,
       });
 
