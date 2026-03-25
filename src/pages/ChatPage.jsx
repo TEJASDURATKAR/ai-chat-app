@@ -1,141 +1,173 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useRef, useEffect } from "react";
 
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
-import ChatWindow from "../components/ChatWindow";
-import ChatInput from "../components/ChatInput";
+function Sidebar({
+  chats,
+  activeChat,
+  setActiveChat,
+  createNewChat,
+  setChats,
+  isOpen,
+  setIsOpen
+}) {
 
-function ChatPage() {
-  const [prompt, setPrompt] = useState("");
+  const [openMenu, setOpenMenu] = useState(null);
+  const [search, setSearch] = useState("");
+  const menuRef = useRef(null);
 
-  const [loading, setLoading] = useState(false);
-
-  // store all chats
-  const [chats, setChats] = useState(() => {
-    const saved = localStorage.getItem("ai-chats");
-    return saved
-      ? JSON.parse(saved)
-      : [{ id: 1, title: "New Chat", messages: [] }];
-  });
-
+  // Close menu when clicking outside
   useEffect(() => {
-    localStorage.setItem("ai-chats", JSON.stringify(chats));
-  }, [chats]);
-
-  const [activeChat, setActiveChat] = useState(() => {
-    return JSON.parse(localStorage.getItem("active-chat")) || 1;
-  });
-  useEffect(() => {
-    localStorage.setItem("active-chat", JSON.stringify(activeChat));
-  }, [activeChat]);
-
-  const currentChat = chats.find((chat) => chat.id === activeChat);
-
-  const askAI = async () => {
-    if (!prompt.trim()) return;
-
-    const userMessage = {
-      role: "user",
-      text: prompt,
-      time: new Date().toLocaleTimeString(),
-    };
-
-    const updatedChats = chats.map((chat) => {
-      if (chat.id === activeChat) {
-        // update title if first message
-        const newTitle =
-          chat.messages.length === 0 ? prompt.slice(0, 30) : chat.title;
-
-        return {
-          ...chat,
-          title: newTitle,
-          messages: [...chat.messages, userMessage],
-        };
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenu(null);
       }
-
-      return chat;
-    });
-
-    setChats(updatedChats);
-    setPrompt("");
-    setLoading(true);
-
-    try {
-      const res = await axios.post("https://ai-chat-api-n772.onrender.com/api/ai/chat", {
-        prompt,
-      });
-
-      const aiMessage = {
-        role: "ai",
-        text: res.data.reply,
-        time: new Date().toLocaleTimeString(),
-      };
-      const newChats = updatedChats.map((chat) => {
-        if (chat.id === activeChat) {
-          return {
-            ...chat,
-            messages: [...chat.messages, aiMessage],
-          };
-        }
-        return chat;
-      });
-
-      setChats(newChats);
-    } catch (err) {
-      console.log(err);
-    }
-
-    setLoading(false);
-  };
-
-  const createNewChat = () => {
-    const newChat = {
-      id: Date.now(),
-      title: "New Chat",
-      messages: [],
     };
 
-    setChats([newChat, ...chats]);
-    setActiveChat(newChat.id);
+    document.addEventListener("mousedown", handleClick);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, []);
+
+  // Rename Chat
+  const renameChat = (id) => {
+    const name = prompt("Rename chat");
+    if (!name) return;
+
+    const updated = chats.map(chat =>
+      chat.id === id ? { ...chat, title: name } : chat
+    );
+
+    setChats(updated);
   };
 
- return (
-  <div className="h-screen flex flex-col overflow-hidden">
+  // Delete Chat
+  const deleteChat = (id) => {
+    const updated = chats.filter(chat => chat.id !== id);
+    setChats(updated);
 
-    <Navbar />
+    if (activeChat === id && updated.length > 0) {
+      setActiveChat(updated[0].id);
+    }
+  };
 
-   <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+  const filteredChats = chats.filter(chat =>
+    chat.title.toLowerCase().includes(search.toLowerCase())
+  );
 
-      <Sidebar
-        chats={chats}
-        activeChat={activeChat}
-        setActiveChat={setActiveChat}
-        createNewChat={createNewChat}
-        setChats={setChats}
-      />
+  return (
+    <>
+      {/* 🔥 Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
-      <div className="flex flex-col flex-1 h-full">
+      {/* 🔥 Sidebar */}
+      <div
+        className={`
+          fixed md:static top-0 left-0 h-screen z-50
+          w-64 bg-base-200 flex flex-col p-3
+          transform transition-transform duration-300
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+      >
 
-        <ChatWindow
-          messages={currentChat?.messages || []}
-          loading={loading}
-          setPrompt={setPrompt}
-          askAI={askAI}
+        {/* 🔥 Close button (mobile) */}
+        <button
+          onClick={() => setIsOpen(false)}
+          className="md:hidden mb-2 text-right"
+        >
+          ❌
+        </button>
+
+        {/* NEW CHAT */}
+        <button
+          onClick={createNewChat}
+          className="btn btn-primary mb-3"
+        >
+          + New Chat
+        </button>
+
+        {/* SEARCH */}
+        <input
+          type="text"
+          placeholder="Search chats"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input input-bordered w-full mb-3"
         />
 
-        <ChatInput
-          prompt={prompt}
-          setPrompt={setPrompt}
-          askAI={askAI}
-        />
+        {/* CHAT LIST */}
+        <div className="flex-1 overflow-y-auto space-y-1">
+
+          {filteredChats.map(chat => (
+
+            <div
+              key={chat.id}
+              onClick={() => {
+                setActiveChat(chat.id);
+                setIsOpen(false); // 🔥 CLOSE on mobile
+              }}
+              className={`relative flex justify-between items-center p-2 rounded cursor-pointer
+              ${activeChat === chat.id ? "bg-base-300" : "hover:bg-base-300"}`}
+            >
+
+              <span className="truncate">
+                {chat.title}
+              </span>
+
+              {/* MENU BUTTON */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu(openMenu === chat.id ? null : chat.id);
+                }}
+              >
+                ⋮
+              </button>
+
+              {/* MENU */}
+              {openMenu === chat.id && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 top-8 bg-base-100 shadow-lg rounded w-40 z-50"
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      renameChat(chat.id);
+                      setOpenMenu(null);
+                    }}
+                    className="block w-full text-left px-3 py-2 hover:bg-base-200"
+                  >
+                    Rename
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteChat(chat.id);
+                      setOpenMenu(null);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-red-500 hover:bg-base-200"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+
+            </div>
+
+          ))}
+
+        </div>
 
       </div>
-
-    </div>
-
-  </div>
-);
+    </>
+  );
 }
 
-export default ChatPage;
+export default Sidebar;

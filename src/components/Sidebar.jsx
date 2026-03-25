@@ -5,12 +5,13 @@ function Sidebar({
   activeChat,
   setActiveChat,
   createNewChat,
-  setChats
+  setChats,
+  isOpen,
+  setIsOpen
 }) {
 
   const [openMenu, setOpenMenu] = useState(null);
   const [search, setSearch] = useState("");
-  const [isOpen, setIsOpen] = useState(false); // 🔥 mobile toggle
   const menuRef = useRef(null);
 
   // Close menu when clicking outside
@@ -49,25 +50,16 @@ function Sidebar({
     }
   };
 
-  // Filter search
   const filteredChats = chats.filter(chat =>
     chat.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <>
-      {/* 🔥 Mobile Toggle Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-base-200 p-2 rounded"
-      >
-        ☰
-      </button>
-
-      {/* 🔥 Overlay (Mobile) */}
+      {/* 🔥 Overlay (Mobile only) */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -75,18 +67,20 @@ function Sidebar({
       {/* 🔥 Sidebar */}
       <div
         className={`
-          fixed md:static z-50 top-0 left-0 h-screen
-          w-64 md:w-64 bg-base-200 flex flex-col p-3
-          transform transition-transform duration-300
+          fixed top-0 left-0 h-full z-50
+          w-64 bg-base-200 flex flex-col p-3
+          transform transition-transform duration-300 ease-in-out
+          
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
+          
+          md:translate-x-0 md:static md:flex
         `}
       >
 
-        {/* 🔥 Close Button (Mobile) */}
+        {/* 🔥 Close button (mobile only) */}
         <button
           onClick={() => setIsOpen(false)}
-          className="md:hidden mb-2 text-right"
+          className="md:hidden mb-3 text-right text-lg"
         >
           ❌
         </button>
@@ -94,7 +88,7 @@ function Sidebar({
         {/* NEW CHAT */}
         <button
           onClick={createNewChat}
-          className="btn btn-primary mb-3 text-sm md:text-base"
+          className="btn btn-primary mb-3"
         >
           + New Chat
         </button>
@@ -105,7 +99,7 @@ function Sidebar({
           placeholder="Search chats"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="input input-bordered w-full mb-3 text-sm"
+          className="input input-bordered w-full mb-3"
         />
 
         {/* CHAT LIST */}
@@ -117,13 +111,13 @@ function Sidebar({
               key={chat.id}
               onClick={() => {
                 setActiveChat(chat.id);
-                setIsOpen(false); // 🔥 close on mobile click
+                setIsOpen(false); // 🔥 close on mobile
               }}
               className={`relative flex justify-between items-center p-2 rounded cursor-pointer
               ${activeChat === chat.id ? "bg-base-300" : "hover:bg-base-300"}`}
             >
 
-              <span className="truncate text-sm md:text-base">
+              <span className="truncate">
                 {chat.title}
               </span>
 
@@ -133,26 +127,23 @@ function Sidebar({
                   e.stopPropagation();
                   setOpenMenu(openMenu === chat.id ? null : chat.id);
                 }}
-                className="text-lg"
               >
                 ⋮
               </button>
 
-              {/* DRAWER */}
+              {/* MENU */}
               {openMenu === chat.id && (
-
                 <div
                   ref={menuRef}
-                  className="absolute right-0 top-8 bg-base-100 shadow-lg rounded w-36 md:w-40 z-50"
+                  className="absolute right-0 top-8 bg-base-100 shadow-lg rounded w-40 z-50"
                 >
-
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       renameChat(chat.id);
                       setOpenMenu(null);
                     }}
-                    className="block w-full text-left px-3 py-2 hover:bg-base-200 text-sm"
+                    className="block w-full text-left px-3 py-2 hover:bg-base-200"
                   >
                     Rename
                   </button>
@@ -163,13 +154,11 @@ function Sidebar({
                       deleteChat(chat.id);
                       setOpenMenu(null);
                     }}
-                    className="block w-full text-left px-3 py-2 text-red-500 hover:bg-base-200 text-sm"
+                    className="block w-full text-left px-3 py-2 text-red-500 hover:bg-base-200"
                   >
                     Delete
                   </button>
-
                 </div>
-
               )}
 
             </div>
