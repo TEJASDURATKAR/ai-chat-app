@@ -68,9 +68,10 @@ function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/ai/chat", {
-        prompt,
-      });
+      const res = await axios.post(
+  "https://your-backend.onrender.com/api/ai/chat",
+  { prompt }
+);
 
       const aiMessage = {
         role: "ai",
