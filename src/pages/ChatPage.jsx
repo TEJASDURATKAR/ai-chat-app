@@ -8,8 +8,15 @@ import ChatInput from "../components/ChatInput";
 
 function ChatPage() {
   const [prompt, setPrompt] = useState("");
-
   const [loading, setLoading] = useState(false);
+
+  // ✅ 🔥 SIDEBAR STATE (NEW)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    console.log("📦 Parent toggle called");
+    setIsSidebarOpen(prev => !prev);
+  };
 
   // store all chats
   const [chats, setChats] = useState(() => {
@@ -26,6 +33,7 @@ function ChatPage() {
   const [activeChat, setActiveChat] = useState(() => {
     return JSON.parse(localStorage.getItem("active-chat")) || 1;
   });
+
   useEffect(() => {
     localStorage.setItem("active-chat", JSON.stringify(activeChat));
   }, [activeChat]);
@@ -43,7 +51,6 @@ function ChatPage() {
 
     const updatedChats = chats.map((chat) => {
       if (chat.id === activeChat) {
-        // update title if first message
         const newTitle =
           chat.messages.length === 0 ? prompt.slice(0, 30) : chat.title;
 
@@ -53,7 +60,6 @@ function ChatPage() {
           messages: [...chat.messages, userMessage],
         };
       }
-
       return chat;
     });
 
@@ -71,6 +77,7 @@ function ChatPage() {
         text: res.data.reply,
         time: new Date().toLocaleTimeString(),
       };
+
       const newChats = updatedChats.map((chat) => {
         if (chat.id === activeChat) {
           return {
@@ -83,7 +90,7 @@ function ChatPage() {
 
       setChats(newChats);
     } catch (err) {
-      console.log(err);
+      console.log("❌ API Error:", err);
     }
 
     setLoading(false);
@@ -100,42 +107,46 @@ function ChatPage() {
     setActiveChat(newChat.id);
   };
 
- return (
-  <div className="h-screen flex flex-col overflow-hidden">
+  return (
+    <div className="h-screen flex flex-col overflow-hidden">
 
-    <Navbar />
+      {/* ✅ PASS TO NAVBAR */}
+      <Navbar toggleSidebar={toggleSidebar} />
 
-    <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
 
-      <Sidebar
-        chats={chats}
-        activeChat={activeChat}
-        setActiveChat={setActiveChat}
-        createNewChat={createNewChat}
-        setChats={setChats}
-      />
-
-      <div className="flex flex-col flex-1 h-full">
-
-        <ChatWindow
-          messages={currentChat?.messages || []}
-          loading={loading}
-          setPrompt={setPrompt}
-          askAI={askAI}
+        {/* ✅ PASS STATE TO SIDEBAR */}
+        <Sidebar
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+          chats={chats}
+          activeChat={activeChat}
+          setActiveChat={setActiveChat}
+          createNewChat={createNewChat}
+          setChats={setChats}
         />
 
-        <ChatInput
-          prompt={prompt}
-          setPrompt={setPrompt}
-          askAI={askAI}
-        />
+        <div className="flex flex-col flex-1 h-full">
+
+          <ChatWindow
+            messages={currentChat?.messages || []}
+            loading={loading}
+            setPrompt={setPrompt}
+            askAI={askAI}
+          />
+
+          <ChatInput
+            prompt={prompt}
+            setPrompt={setPrompt}
+            askAI={askAI}
+          />
+
+        </div>
 
       </div>
 
     </div>
-
-  </div>
-);
+  );
 }
 
 export default ChatPage;

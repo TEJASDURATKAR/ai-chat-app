@@ -9,27 +9,47 @@ function Navbar({ toggleSidebar }) {
   const [theme, setTheme] = useState("light");
   const [user, setUser] = useState(null);
 
+  // 🔥 DEBUG: check if prop received
+  useEffect(() => {
+    console.log("Navbar mounted");
+    console.log("toggleSidebar prop:", toggleSidebar);
+  }, [toggleSidebar]);
+
+  const handleToggleClick = () => {
+    console.log("🔥 Toggle button clicked");
+
+    if (toggleSidebar) {
+      toggleSidebar();
+    } else {
+      console.log("❌ toggleSidebar function NOT received");
+    }
+  };
+
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", newTheme);
     setTheme(newTheme);
+    console.log("Theme changed to:", newTheme);
   };
 
   const login = async () => {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
+      console.log("✅ Login success");
     } catch (error) {
-      console.log("Login Error:", error);
+      console.log("❌ Login Error:", error);
     }
   };
 
   const logout = () => {
     signOut(auth);
+    console.log("👋 Logged out");
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      console.log("Auth state changed:", currentUser);
       setUser(currentUser);
     });
 
@@ -38,14 +58,14 @@ function Navbar({ toggleSidebar }) {
 
   return (
 
-    <div className="navbar bg-base-300 border-b px-3 md:px-4">
+    <div className="navbar bg-base-300 border-b px-3 md:px-4 z-50">
 
       {/* LEFT SIDE */}
       <div className="flex items-center gap-2 flex-1">
 
         {/* 🔥 MOBILE MENU BUTTON */}
         <button
-          onClick={toggleSidebar}
+          onClick={handleToggleClick}
           className="md:hidden btn btn-ghost btn-sm text-lg"
         >
           ☰
@@ -83,7 +103,7 @@ function Navbar({ toggleSidebar }) {
             <div className="w-8 rounded-full">
 
               {user ? (
-                <img src={user.photoURL} />
+                <img src={user.photoURL} alt="user" />
               ) : (
                 <div className="bg-neutral text-neutral-content flex items-center justify-center w-8 h-8 rounded-full">
                   T
