@@ -15,7 +15,7 @@ function ChatPage() {
 
   const toggleSidebar = () => {
     console.log("📦 Parent toggle called");
-    setIsSidebarOpen(prev => !prev);
+    setIsSidebarOpen((prev) => !prev);
   };
 
   // store all chats
@@ -40,63 +40,70 @@ function ChatPage() {
 
   const currentChat = chats.find((chat) => chat.id === activeChat);
 
-  const askAI = async () => {
-    if (!prompt.trim()) return;
+const askAI = async () => {
+  if (!prompt.trim()) return;
 
-    const userMessage = {
-      role: "user",
-      text: prompt,
+  const userMessage = {
+    role: "user",
+    text: prompt,
+    time: new Date().toLocaleTimeString(),
+  };
+
+  // ✅ Add user message
+  const updatedChats = chats.map((chat) => {
+    if (chat.id === activeChat) {
+      const newTitle =
+        chat.messages.length === 0 ? prompt.slice(0, 30) : chat.title;
+
+      return {
+        ...chat,
+        title: newTitle,
+        messages: [...chat.messages, userMessage],
+      };
+    }
+    return chat;
+  });
+
+  setChats(updatedChats);
+  setPrompt("");
+  setLoading(true);
+
+  console.log("📡 Sending request...");
+
+  try {
+    const res = await axios.post(
+      "https://ai-chat-api-n772.onrender.com/api/ai/chat",
+      { prompt },
+      { timeout: 30000 }
+    );
+
+    console.log("✅ Response:", res.data);
+
+    // ✅ ADD AI RESPONSE TO CHAT
+    const aiMessage = {
+      role: "ai",
+      text: res.data.reply,
       time: new Date().toLocaleTimeString(),
     };
 
-    const updatedChats = chats.map((chat) => {
+    const newChats = updatedChats.map((chat) => {
       if (chat.id === activeChat) {
-        const newTitle =
-          chat.messages.length === 0 ? prompt.slice(0, 30) : chat.title;
-
         return {
           ...chat,
-          title: newTitle,
-          messages: [...chat.messages, userMessage],
+          messages: [...chat.messages, aiMessage],
         };
       }
       return chat;
     });
 
-    setChats(updatedChats);
-    setPrompt("");
-    setLoading(true);
+    setChats(newChats);
 
-    try {
-      const res = await axios.post(
-  "https://your-backend.onrender.com/api/ai/chat",
-  { prompt }
-);
+  } catch (err) {
+    console.log("❌ ERROR:", err.message);
+  }
 
-      const aiMessage = {
-        role: "ai",
-        text: res.data.reply,
-        time: new Date().toLocaleTimeString(),
-      };
-
-      const newChats = updatedChats.map((chat) => {
-        if (chat.id === activeChat) {
-          return {
-            ...chat,
-            messages: [...chat.messages, aiMessage],
-          };
-        }
-        return chat;
-      });
-
-      setChats(newChats);
-    } catch (err) {
-      console.log("❌ API Error:", err);
-    }
-
-    setLoading(false);
-  };
-
+  setLoading(false);
+};
   const createNewChat = () => {
     const newChat = {
       id: Date.now(),
@@ -110,12 +117,10 @@ function ChatPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-
       {/* ✅ PASS TO NAVBAR */}
       <Navbar toggleSidebar={toggleSidebar} />
 
       <div className="flex flex-1 overflow-hidden">
-
         {/* ✅ PASS STATE TO SIDEBAR */}
         <Sidebar
           isOpen={isSidebarOpen}
@@ -128,7 +133,6 @@ function ChatPage() {
         />
 
         <div className="flex flex-col flex-1 h-full">
-
           <ChatWindow
             messages={currentChat?.messages || []}
             loading={loading}
@@ -136,16 +140,9 @@ function ChatPage() {
             askAI={askAI}
           />
 
-          <ChatInput
-            prompt={prompt}
-            setPrompt={setPrompt}
-            askAI={askAI}
-          />
-
+          <ChatInput prompt={prompt} setPrompt={setPrompt} askAI={askAI} />
         </div>
-
       </div>
-
     </div>
   );
 }
